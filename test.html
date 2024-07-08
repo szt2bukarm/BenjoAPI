@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Embed Example</title>
+</head>
+<body>
+    <h1>YouTube Embed Example</h1>
+    <iframe class="player" width="560" height="315" src="https://www.youtube.com/embed/zrGP_8RJxSk" frameborder="0" allowfullscreen></iframe>
+    <input type="text" class="idinput">
+
+
+    <script>
+        const input = document.querySelector('.idinput')
+        input.addEventListener("keyup", (event) => {
+            if (event.key === 'Enter') {
+                const id = input.value
+                const iframe = document.querySelector('.player')
+                iframe.src = `https://www.youtube.com/embed/${id}`
+            }
+        })
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 const YoutubeMusicApi = require('youtube-music-api');
 const Levenshtein = require('levenshtein');
-const TrackID = require('../models/trackID');
+const TrackID = require('../models/trackIDModel');
 const api = new YoutubeMusicApi();
 
 api.initalize().then(info => {
@@ -13,7 +13,7 @@ function getStringSimilarityScore(str1, str2) {
     const distance = new Levenshtein(str1, str2).distance;
     const maxLength = Math.max(str1.length, str2.length);
     return (maxLength - distance) / maxLength;
-  }
+}
 
 function getLengthSimilarityScore(length1, length2) {
     const maxLength = Math.max(length1, length2);
@@ -55,7 +55,7 @@ exports.getMusic = async (req, res) => {
         songResults = rankSearchResults(result.content,artist,title,duration)   
     })
 
-    if (songResults[0].combinedScore < 0.75 || songResults[0].titleScore < 0.45) {
+    if (songResults[0].combinedScore < 0.80 || songResults[0].titleScore < 0.5) {
         await api.search(`${artist} ${title}`,"video").then(result => {
             videoResults = result.content
         })

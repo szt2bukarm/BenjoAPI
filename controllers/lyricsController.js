@@ -49,7 +49,7 @@ exports.getLyrics = async (req,res) => {
     const lyrics = await data.json();
     // console.log(lyrics);
     if (lyrics.message.header.status_code !== 200) {
-        return res.status(400).json({
+        return res.status(404).json({
             status: "error",
             data: "lyrics unavailable"
         })
@@ -64,11 +64,11 @@ exports.getLyrics = async (req,res) => {
             const lyrics = await data.json();
             console.log(lyrics);
             lyrics.length != 0 ? 
-            res.status(400).json({
+            res.status(200).json({
                 status: "success",
                 data: lyrics.lyrics
             }) :
-            res.status(400).json({
+            res.status(404).json({
                 status: "error",
                 data: "lyrics unavailable"
             })
