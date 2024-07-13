@@ -2,7 +2,6 @@ const YoutubeMusicApi = require('youtube-music-api');
 const Levenshtein = require('levenshtein');
 const TrackID = require('../models/trackIDModel');
 const api = new YoutubeMusicApi();
-const youtubedl = require('youtubedl-core');
 
 api.initalize().then(info => {
     console.log('YoutubeMusicApi initialized successfully');
@@ -39,17 +38,6 @@ function rankSearchResults(results, artist,title, duration) {
 }
 
 
-async function getAudioUrl(videoId) {
-    try {
-        const info = await youtubedl.getInfo(videoId);
-        return info.formats.find(format => format.ext === 'mp3').url;
-    } catch (error) {
-        console.error('Error fetching MP3 link:', error);
-        return null;
-    }
-}
-
-
 exports.getMusic = async (req, res) => {
     const { album,artist,title, duration } = req.body;
 
@@ -72,8 +60,6 @@ exports.getMusic = async (req, res) => {
             videoResults = result.content
         })
 
-        const audioStreamUrl = await getAudioUrl(videoResults[0].videoId);
-
         await TrackID.create({
             track: `${artist} ${title}`,
             id: videoResults[0].videoId
@@ -83,7 +69,6 @@ exports.getMusic = async (req, res) => {
             title: videoResults[0].name,
             id: videoResults[0].videoId,
             duration: videoResults[0].duration,
-            audioStreamUrl: audioStreamUrl,
             isSaved: true,
             notExact: true
         })
@@ -99,8 +84,6 @@ exports.getMusic = async (req, res) => {
             id: songResults[0].videoId
         })
 
-        const audioStreamUrl = await getAudioUrl(songResults[0].videoId);
-
         return res.status(200).json({ 
             title: songResults[0].name,
             artist: songResults[0].artist,
@@ -110,13 +93,11 @@ exports.getMusic = async (req, res) => {
             titleScore: songResults[0].titleScore,
             durationScore: songResults[0].durationScore,
             combinedScore: songResults[0].combinedScore,
-            audioStreamUrl: audioStreamUrl,
             isSaved: true,
             notExact: false
          })
     }
 
-    const audioStreamUrl = await getAudioUrl(songResults[0].videoId);
 
 
     res.status(200).json({
@@ -128,7 +109,6 @@ exports.getMusic = async (req, res) => {
         titleScore: songResults[0].titleScore,
         durationScore: songResults[0].durationScore,
         combinedScore: songResults[0].combinedScore,
-        audioStreamUrl: audioStreamUrl,
         isSaved: false,
         notExact: false
     });
