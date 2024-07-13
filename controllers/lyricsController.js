@@ -57,6 +57,7 @@ exports.getLyrics = async (req,res) => {
         try {
             res.status(200).json({
                 status: "success",
+                synced: true,
                 data: JSON.parse(lyrics.message.body.macro_calls["track.subtitles.get"].message.body.subtitle_list[0].subtitle.subtitle_body)
             })
         } catch (error) {
@@ -66,6 +67,7 @@ exports.getLyrics = async (req,res) => {
             lyrics.length != 0 ? 
             res.status(200).json({
                 status: "success",
+                synced: false,
                 data: lyrics.lyrics
             }) :
             res.status(404).json({
