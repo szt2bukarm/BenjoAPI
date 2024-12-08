@@ -1,0 +1,35 @@
+{
+  "name": "benjo-api",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "node ./scripts/modify-yt-api.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@bochilteam/scraper-youtube": "^5.0.0",
+    "@distube/ytdl-core": "^4.14.4",
+    "axios": "^1.7.2",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "levenshtein": "^1.0.5",
+    "mongoose": "^8.4.1",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.7",
+    "youtube-ext": "^1.1.25",
+    "youtube-music-api": "^1.0.6",
+    "youtubedl-core": "^4.11.7",
+    "youtubei": "^1.5.4",
+    "ytdl-core": "^4.11.5",
+    "ytscr": "^1.0.5"
+  }
+}
