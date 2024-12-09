@@ -103,6 +103,23 @@ const getSimiliarTracks = async (track,artist) => {
   return filteredItems?.sort(() => Math.random() - 0.5).slice(0, 10);
 }
 
+const getSimilarArtists = async (artist) => {
+  const resp = await fetch(
+    `https://ws.audioscrobbler.com/2.0/?method=artist.getSimilar&artist=${artist}&api_key=be2eb0afd347641494581a799604982c&format=json`
+  );
+  const data = await resp.json();
+  const artists = data?.similarartists?.artist?.map((artist) => artist.name);
+  return artists.slice(0, 5).sort(() => Math.random() - 0.5);
+}
+
+const getTopTracksFromArtist = async (artist) => {
+  const resp = await fetch(
+    `https://ws.audioscrobbler.com/2.0/?method=artist.getTopTracks&artist=${artist}&api_key=be2eb0afd347641494581a799604982c&format=json`
+  );
+  const data = await resp.json();
+  return data?.toptracks?.track || [];
+}
+
 const shuffleObject = (obj) => {
   const entries = Object.entries(obj);
   const shuffledEntries = entries.sort(() => Math.random() - 0.5);
@@ -147,10 +164,65 @@ exports.getRecommendations = catchAsync(async (req, res) => {
     })
   );
 
-  return res.status(200).json({
-    status: "success",
-    data: shuffleObject(dataObj),
-  });
+  const similiarTopTracks = {};
+  if (Object.keys(dataObj).length === 0) {
+    console.log("No similar tracks found");
+    const artistSet = new Set(artists);
+    const artistPromises = Array.from(artistSet).map(async (artist) => {
+      const similarArtists = await getSimilarArtists(artist);
+      await Promise.all(
+        similarArtists.map(async (similarArtist, i) => {
+          const topTracks = await getTopTracksFromArtist(similarArtist);
+          if (!topTracks) return;
+          topTracks.sort(() => Math.random() - 0.5).slice(0, 5).map((item, j) => {
+            similiarTopTracks[`${similarArtist}${i}-${j}`] = {
+              name: item.name,
+              artist: item.artist.name,
+            };
+          });
+        })
+      );
+    });
+
+    await Promise.all(artistPromises);
+
+    await Promise.all(
+      Object.keys(similiarTopTracks).map(async (key) => {
+        const data = await getSpotifyTrackId(
+          similiarTopTracks[key].name,
+          similiarTopTracks[key].artist,
+          req.token
+        );
+        similiarTopTracks[key] = {
+          trackID: data?.tracks.items[0].id,
+          trackName: data?.tracks.items[0].name,
+          albumID: data?.tracks.items[0].album.id,
+          albumName: data?.tracks.items[0].album.name,
+          image: data?.tracks.items[0].album.images[0].url,
+          artists:
+            data?.tracks.items[0].artists.length > 1
+              ? data?.tracks.items[0].artists.map((artist) => ({
+                  name: artist.name,
+                  id: artist.id,
+                }))
+              : {
+                  name: data?.tracks.items[0].artists[0].name,
+                  id: data?.tracks.items[0].artists[0].id,
+                },
+        };
+      })
+    );
+
+    res.status(200).json({
+      status: "success",
+      data: shuffleObject(similiarTopTracks),
+    });
+  } else {
+    res.status(200).json({
+      status: "success",
+      data: shuffleObject(dataObj),
+    });
+  }
 });
 
 const getSpotifyTrackId = async (trackName, artistName, token) => {
