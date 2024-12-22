@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+const axios = require("axios");
+const sharp = require('sharp');
+
 const app = express();
 
 app.use(express.json());
@@ -14,6 +17,54 @@ app.use(
     credentials: true,
   })
 );
+
+function rgbToHex(r, g, b) {
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+}
+
+app.post('/extractColor', express.json(), async (req, res) => {
+  try {
+      const imageUrl = req.body.imageUrl; 
+      
+      const response = await axios({
+          method: 'get',
+          url: imageUrl,
+          responseType: 'arraybuffer',
+      });
+
+      const imageBuffer = Buffer.from(response.data);
+      
+      sharp(imageBuffer)
+          .resize(10, 10) 
+          .raw() 
+          .toBuffer()
+          .then((data) => {
+              const pixels = data.length / 3;
+              let r = 0, g = 0, b = 0;
+
+              for (let i = 0; i < data.length; i += 3) {
+                  r += data[i];
+                  g += data[i + 1];
+                  b += data[i + 2];
+              }
+
+              r = Math.round(r / pixels);
+              g = Math.round(g / pixels);
+              b = Math.round(b / pixels);
+
+              const hexColor = rgbToHex(r, g, b);
+
+              res.json({ dominantColor: hexColor });
+          })
+          .catch((err) => {
+              console.error(err);
+              res.status(500).send('Error processing the image');
+          });
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Error fetching the image');
+  }
+});
 
 const AppError = require("./utils/appError");
 const errorHandler = require("./controllers/errorController");
