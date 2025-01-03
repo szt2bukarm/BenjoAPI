@@ -263,7 +263,7 @@ exports.getVideoDetails = async (req, res) => {
 };
 
 exports.getAlbum = catchAsync(async (req, res) => {
-  const album = await fetch(
+  const albumResponse = await fetch(
     `https://api.spotify.com/v1/albums/${req.body.id}`,
     {
       headers: {
@@ -271,46 +271,52 @@ exports.getAlbum = catchAsync(async (req, res) => {
       },
     }
   );
-  const data = await album.json();
+  const albumData = await albumResponse.json();
 
-  const albumData = {
+  const artistPromises = albumData.artists.map(async (artist) => {
+    const artistResponse = await fetch(
+      `https://api.spotify.com/v1/artists/${artist.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${req.token}`,
+        },
+      }
+    );
+    const artistData = await artistResponse.json();
+    return {
+      name: artist.name,
+      id: artist.id,
+      image: artistData.images[0]?.url || null, 
+    };
+  });
+
+  const enrichedArtists = await Promise.all(artistPromises);
+
+  const fullAlbumData = {
     info: {
-      id: data.id,
-      name: data.name,
-      artist: data.artists.map((artist) => {
-        return {
-          name: artist.name,
-          id: artist.id,
-        };
-      }),
-      image: data.images[0]?.url,
-      release: data.release_date,
+      id: albumData.id,
+      name: albumData.name,
+      artist: enrichedArtists,
+      image: albumData.images[0]?.url,
+      release: albumData.release_date,
     },
-    tracks: data.tracks.items.map((item) => {
-      return {
-        trackID: item.id,
-        trackName: item.name,
-        artists:
-          item.artists.length > 1
-            ? item.artists.map((artist) => ({
-                name: artist.name,
-                id: artist.id,
-              }))
-            : {
-                name: item.artists[0].name,
-                id: item.artists[0].id,
-              },
-        albumID: data.id,
-        albumName: data.name,
-        image: data.images[0]?.url,
-        duration: item.duration_ms,
-      };
-    }),
+    tracks: albumData.tracks.items.map((item) => ({
+      trackID: item.id,
+      trackName: item.name,
+      artists: item.artists.map((artist) => ({
+        name: artist.name,
+        id: artist.id,
+      })),
+      albumID: albumData.id,
+      albumName: albumData.name,
+      image: albumData.images[0]?.url,
+      duration: item.duration_ms,
+    })),
   };
 
   res.status(200).json({
     status: "success",
-    data: albumData,
+    data: fullAlbumData,
   });
 });
 
