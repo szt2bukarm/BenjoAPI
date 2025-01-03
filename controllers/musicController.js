@@ -273,6 +273,7 @@ exports.getAlbum = catchAsync(async (req, res) => {
   );
   const albumData = await albumResponse.json();
 
+  // Fetch artist details to add their images
   const artistPromises = albumData.artists.map(async (artist) => {
     const artistResponse = await fetch(
       `https://api.spotify.com/v1/artists/${artist.id}`,
@@ -286,27 +287,35 @@ exports.getAlbum = catchAsync(async (req, res) => {
     return {
       name: artist.name,
       id: artist.id,
-      image: artistData.images[0]?.url || null, 
+      image: artistData.images[0]?.url || null, // Include the artist image
     };
   });
 
+  // Wait for all artist fetch requests to complete
   const enrichedArtists = await Promise.all(artistPromises);
 
+  // Construct the albumData object with artist images
   const fullAlbumData = {
     info: {
       id: albumData.id,
       name: albumData.name,
-      artist: enrichedArtists,
+      artist: enrichedArtists, // Updated artists with images
       image: albumData.images[0]?.url,
       release: albumData.release_date,
     },
     tracks: albumData.tracks.items.map((item) => ({
       trackID: item.id,
       trackName: item.name,
-      artists: item.artists.map((artist) => ({
-        name: artist.name,
-        id: artist.id,
-      })),
+      artists:
+      item.artists.length > 1
+        ? item.artists.map((artist) => ({
+            name: artist.name,
+            id: artist.id,
+          }))
+        : {
+            name: item.artists[0].name,
+            id: item.artists[0].id,
+          },
       albumID: albumData.id,
       albumName: albumData.name,
       image: albumData.images[0]?.url,
